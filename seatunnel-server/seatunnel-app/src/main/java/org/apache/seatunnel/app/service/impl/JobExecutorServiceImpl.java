@@ -31,10 +31,12 @@ import org.apache.seatunnel.common.config.Common;
 import org.apache.seatunnel.common.config.DeployMode;
 import org.apache.seatunnel.common.utils.ExceptionUtils;
 import org.apache.seatunnel.engine.client.SeaTunnelClient;
+import org.apache.seatunnel.engine.client.job.ClientJobExecutionEnvironment;
 import org.apache.seatunnel.engine.client.job.ClientJobProxy;
-import org.apache.seatunnel.engine.client.job.JobExecutionEnvironment;
 import org.apache.seatunnel.engine.common.config.ConfigProvider;
 import org.apache.seatunnel.engine.common.config.JobConfig;
+import org.apache.seatunnel.engine.common.config.SeaTunnelConfig;
+import org.apache.seatunnel.engine.common.config.YamlSeaTunnelConfigBuilder;
 import org.apache.seatunnel.engine.core.job.JobStatus;
 
 import org.springframework.stereotype.Service;
@@ -98,14 +100,45 @@ public class JobExecutorServiceImpl implements IJobExecutorService {
         return filePath;
     }
 
+    //    public Long executeJobBySeaTunnel(Integer userId, String filePath, Long jobInstanceId) {
+    //        Common.setDeployMode(DeployMode.CLIENT);
+    //        JobConfig jobConfig = new JobConfig();
+    //        jobConfig.setName(jobInstanceId + "_job");
+    //        SeaTunnelClient seaTunnelClient = createSeaTunnelClient();
+    //        try {
+    //            JobExecutionEnvironment jobExecutionEnv =
+    //                    seaTunnelClient.createExecutionContext(filePath, jobConfig);
+    //            final ClientJobProxy clientJobProxy = jobExecutionEnv.execute();
+    //            JobInstance jobInstance = jobInstanceDao.getJobInstance(jobInstanceId);
+    //            jobInstance.setJobEngineId(Long.toString(clientJobProxy.getJobId()));
+    //            jobInstanceDao.update(jobInstance);
+    //
+    //            CompletableFuture.runAsync(
+    //                    () -> {
+    //                        waitJobFinish(
+    //                                clientJobProxy,
+    //                                userId,
+    //                                jobInstanceId,
+    //                                Long.toString(clientJobProxy.getJobId()),
+    //                                seaTunnelClient);
+    //                    });
+    //
+    //        } catch (ExecutionException | InterruptedException e) {
+    //            ExceptionUtils.getMessage(e);
+    //            throw new RuntimeException(e);
+    //        }
+    //        return jobInstanceId;
+    //    }
+
     public Long executeJobBySeaTunnel(Integer userId, String filePath, Long jobInstanceId) {
         Common.setDeployMode(DeployMode.CLIENT);
         JobConfig jobConfig = new JobConfig();
         jobConfig.setName(jobInstanceId + "_job");
-        SeaTunnelClient seaTunnelClient = createSeaTunnelClient();
         try {
-            JobExecutionEnvironment jobExecutionEnv =
-                    seaTunnelClient.createExecutionContext(filePath, jobConfig);
+            SeaTunnelConfig seaTunnelConfig = new YamlSeaTunnelConfigBuilder().build();
+            SeaTunnelClient seaTunnelClient = createSeaTunnelClient();
+            ClientJobExecutionEnvironment jobExecutionEnv =
+                    seaTunnelClient.createExecutionContext(filePath, jobConfig, seaTunnelConfig);
             final ClientJobProxy clientJobProxy = jobExecutionEnv.execute();
             JobInstance jobInstance = jobInstanceDao.getJobInstance(jobInstanceId);
             jobInstance.setJobEngineId(Long.toString(clientJobProxy.getJobId()));
